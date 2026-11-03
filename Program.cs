@@ -10,6 +10,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
+builder.Services.AddCors();
 #region 
 
 
@@ -28,7 +29,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 #endregion
+app.UseDefaultFiles(); // Sprawia, że wejście na główny adres automatycznie ładuje index.html
+app.UseStaticFiles();  // Pozwala aplikacji czytać i udostępniać pliki z folderu wwwroot
 
+app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 
 app.MapPost("/api/TicketBooth/build", async (AppDbContext db) => 
 {

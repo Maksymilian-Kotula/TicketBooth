@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>TicketBooth - Rezerwacja</title>
+</head>
+<body>
+    <h1>System biletowy - Hala LO </h1>
+    <button onclick="pobierzMiejsca()">Pobierz krzesła z bazy</button>
+
+    <script>
+        async function pobierzMiejsca() {
+            const odpowiedz = await fetch('/api/TicketBooth/seats');
+            const krzesla = await odpowiedz.json();
+            
+            console.log("Pobrane dane z C#:", krzesla);
+            alert(`Udało się! Pobrane z bazy krzesła: ${krzesla.length} sztuk.`);
+        }
+    </script>
+</body>
+</html>
