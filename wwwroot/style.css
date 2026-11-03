@@ -1,0 +1,57 @@
+body { 
+    font-family: Arial, sans-serif; 
+    text-align: center; 
+    background: #f4f4f9; 
+    padding-bottom: 50px;
+}
+
+/* Wygląd sceny */
+.stage {
+    width: 800px;
+    max-width: 90%;
+    height: 60px;
+    background-color: #333;
+    color: white;
+    margin: 20px auto 40px auto; /* 40px odstępu od krzeseł na dole */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 8px 8px 0 0;
+    letter-spacing: 5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Kontener siatki z korytarzami */
+#seat-map {
+    display: grid;
+    /* 15 krzeseł (35px), korytarz (50px), 15 krzeseł (35px) */
+    grid-template-columns: repeat(15, 35px) 50px repeat(15, 35px); 
+    /* 6 rzędów (35px), korytarz (50px), 11 rzędów (35px) */
+    grid-template-rows: repeat(6, 35px) 50px repeat(11, 35px);
+    gap: 6px;
+    justify-content: center;
+}
+
+/* Wygląd pojedynczego krzesła */
+.seat {
+    width: 35px;
+    height: 35px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.seat:hover {
+    transform: scale(1.1);
+}
+
+.wolne { background-color: #4CAF50; }
+.zajete { background-color: #F44336; }

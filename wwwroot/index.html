@@ -2,20 +2,71 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>TicketBooth - Rezerwacja</title>
+    <title>TicketBooth - Hala LO w Skawinie</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>System biletowy - Hala LO </h1>
-    <button onclick="pobierzMiejsca()">Pobierz krzesła z bazy</button>
+    <h1>Sala</h1>
+    <p>Kliknij zielone miejsce, aby je zarezerwować. Kliknij czerwone, aby anulować.</p>
+    
+    <!-- Dodana scena -->
+    <div class="stage">SCENA</div>
+    
+    <div id="seat-map"></div>
 
     <script>
-        async function pobierzMiejsca() {
+        async function ladujMiejsca() {
             const odpowiedz = await fetch('/api/TicketBooth/seats');
             const krzesla = await odpowiedz.json();
             
-            console.log("Pobrane dane z C#:", krzesla);
-            alert(`Udało się! Pobrane z bazy krzesła: ${krzesla.length} sztuk.`);
+            const mapa = document.getElementById('seat-map');
+            mapa.innerHTML = ''; 
+
+            krzesla.forEach(krzeslo => {
+                const kwadracik = document.createElement('div');
+                kwadracik.classList.add('seat');
+                kwadracik.textContent = krzeslo.number; 
+                kwadracik.title = `Rząd: ${krzeslo.row}, Miejsce: ${krzeslo.number}`; 
+                
+                // --- OBLICZANIE POZYCJI (OMIJAMY KORYTARZE) ---
+                // Jeśli nr > 15, przesuwamy o jedną kolumnę w prawo (robiąc miejsce na korytarz na 16 pozycji)
+                const kolumnaSiatki = krzeslo.number <= 15 ? krzeslo.number : krzeslo.number + 1;
+                // Jeśli rząd > 6, przesuwamy o jeden wiersz w dół (robiąc miejsce na korytarz na 7 pozycji)
+                const rzadSiatki = krzeslo.row <= 6 ? krzeslo.row : krzeslo.row + 1;
+
+                kwadracik.style.gridColumn = kolumnaSiatki;
+                kwadracik.style.gridRow = rzadSiatki;
+                // ----------------------------------------------
+
+                if (krzeslo.status === "Wolne") {
+                    kwadracik.classList.add('wolne');
+                    kwadracik.onclick = () => rezerwuj(krzeslo.id);
+                } else {
+                    kwadracik.classList.add('zajete');
+                    kwadracik.onclick = () => anuluj(krzeslo.id); 
+                }
+                
+                mapa.appendChild(kwadracik);
+            });
         }
+
+        async function rezerwuj(id) {
+            const odpowiedz = await fetch(`/api/TicketBooth/reserve/${id}`, { method: 'PUT' });
+            if (odpowiedz.ok) {
+                ladujMiejsca(); 
+            }
+        }
+        
+        async function anuluj(id) {
+            if(confirm("Czy na pewno chcesz anulować tę rezerwację?")) {
+                const odpowiedz = await fetch(`/api/TicketBooth/cancel/${id}`, { method: 'PUT' });
+                if (odpowiedz.ok) {
+                    ladujMiejsca(); 
+                }
+            }
+        }
+
+        ladujMiejsca();
     </script>
 </body>
 </html>
