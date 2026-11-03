@@ -7,3 +7,10 @@ Accept: application/json
 POST http://localhost:5155/api/TicketBooth/build
 ###
 GET http://localhost:5155/api/TicketBooth/seats
+
+###
+PUT http://localhost:5155/api/TicketBooth/reserve/1
+
+###
+
+PUT http://localhost:5155/api/TicketBooth/cancel/1
