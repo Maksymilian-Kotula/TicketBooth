@@ -1,4 +1,13 @@
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// 1. Wyciągamy adres bazy z pliku appsettings.json
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// 2. Rejestrujemy AppDbContext w aplikacji
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
