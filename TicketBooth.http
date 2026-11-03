@@ -4,3 +4,6 @@ GET {{TicketBooth_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+POST http://localhost:5155/api/TicketBooth/build
+###
+GET http://localhost:5155/api/TicketBooth/seats
