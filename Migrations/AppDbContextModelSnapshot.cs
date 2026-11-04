@@ -28,6 +28,15 @@ namespace TicketBooth.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ClientEmail")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ClientName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ClientPhone")
+                        .HasColumnType("longtext");
+
                     b.Property<int>("Number")
                         .HasColumnType("int");
 

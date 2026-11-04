@@ -29,6 +29,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 #endregion
+
 app.UseDefaultFiles(); // Sprawia, że wejście na główny adres automatycznie ładuje index.html
 app.UseStaticFiles();  // Pozwala aplikacji czytać i udostępniać pliki z folderu wwwroot
 
@@ -65,7 +66,7 @@ app.MapGet("/api/TicketBooth/seats", async (AppDbContext db) =>
     return Results.Ok(seats);
 });
 
-app.MapPut("/api/TicketBooth/reserve/{id}", async (int id, AppDbContext db) =>
+app.MapPut("/api/TicketBooth/reserve/{id}", async (int id, ReservationRequest? request, AppDbContext db) =>
 {
     var seat = await db.Seats.FindAsync(id);
 
@@ -78,9 +79,17 @@ app.MapPut("/api/TicketBooth/reserve/{id}", async (int id, AppDbContext db) =>
     }
 
     seat.Status = "Zajęty";
+    
+    // Jeśli przysłano dane klienta, to je zapisujemy (Admin tego nie wysyła, więc dla admina request będzie null)
+    if (request != null)
+    {
+        seat.ClientName = request.ClientName;
+        seat.ClientEmail = request.ClientEmail;
+        seat.ClientPhone = request.ClientPhone;
+    }
+
     await db.SaveChangesAsync();
     return Results.Ok($"Miejsce w rzędzie {seat.Row} o numerze {seat.Number} zostało zarezerwowane!");
-
 });
 
 app.MapPut("/api/TicketBooth/cancel/{id}", async (int id, AppDbContext db) =>
@@ -96,6 +105,12 @@ app.MapPut("/api/TicketBooth/cancel/{id}", async (int id, AppDbContext db) =>
     }
 
     seat.Status = "Wolne";
+    
+    // Czyścimy dane klienta przy zwalnianiu miejsca
+    seat.ClientName = null;
+    seat.ClientEmail = null;
+    seat.ClientPhone = null;
+
     await db.SaveChangesAsync();
     return Results.Ok($"Miejsce w rzędzie {seat.Row} o numerze {seat.Number} zostało zwolnione!");
 });

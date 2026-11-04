@@ -71,22 +71,61 @@ function odswiezKoszyk() {
     }
 }
 
-// Finalizacja zakupów (wysłanie do backendu)
-async function kupBilety() {
-    const btnKup = document.getElementById('btn-kup');
-    btnKup.disabled = true;
-    btnKup.textContent = "Przetwarzanie...";
+// ---  Otwieranie i zamykanie modala ---
+function kupBilety() {
+    // Zamiast od razu wysyłać, pokazujemy okienko
+    document.getElementById('modal-rezerwacji').style.display = "block";
+}
 
-    // Wysyłamy zapytanie PUT dla każdego miejsca w koszyku równolegle
-    const zapytania = koszyk.map(id => fetch(`/api/TicketBooth/reserve/${id}`, { method: 'PUT' }));
+function zamknijModal() {
+    document.getElementById('modal-rezerwacji').style.display = "none";
+}
+
+// Finalizacja po wypełnieniu formularza
+async function potwierdzRezerwacje() {
+    const imie = document.getElementById('klient-imie').value;
+    const email = document.getElementById('klient-email').value;
+    const telefon = document.getElementById('klient-telefon').value; // Pobieramy telefon
+
+    if (!imie || !email || !telefon) {
+        alert("Proszę wypełnić wszystkie pola!");
+        return;
+    }
+
+    const btnPotwierdz = document.querySelector('.modal-content button.kup');
+    btnPotwierdz.disabled = true;
+    btnPotwierdz.textContent = "Przetwarzanie...";
+
+    // Przygotowujemy paczkę danych dla C#
+    const daneKlienta = {
+        ClientName: imie,
+        ClientEmail: email,
+        ClientPhone: telefon
+    };
+
+    // Wysyłamy zapytanie PUT dla każdego miejsca w koszyku, DODAJĄC dane klienta do "body"
+    const zapytania = koszyk.map(id => 
+        fetch(`/api/TicketBooth/reserve/${id}`, { 
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(daneKlienta)
+        })
+    );
+    
     await Promise.all(zapytania);
     
-    alert("Dziękujemy! Bilety zostały zarezerwowane.");
+    zamknijModal();
+    alert(`Dziękujemy, ${imie}! Twoje bilety zostały zarezerwowane. Szczegóły prześlemy na adres: ${email}`);
     
-    // Czyszczenie i restart widoku
     koszyk = [];
-    btnKup.textContent = "Zarezerwuj bilety";
+    document.getElementById('klient-imie').value = '';
+    document.getElementById('klient-email').value = '';
+    document.getElementById('klient-telefon').value = '';
+    btnPotwierdz.disabled = false;
+    btnPotwierdz.textContent = "Potwierdzam i rezerwuję";
+    
     ladujMiejsca(); 
 }
 
-ladujMiejsca();

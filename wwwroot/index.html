@@ -25,6 +25,21 @@
         <button id="btn-kup" class="kup" disabled onclick="kupBilety()">Zarezerwuj bilety</button>
     </div>
 
+    <!-- Wyskakujące okienko formularza -->
+    <div id="modal-rezerwacji" class="modal">
+        <div class="modal-content">
+            <span class="zamknij" onclick="zamknijModal()">&times;</span>
+            <h2>Dane rezerwacji</h2>
+            <p>Podaj swoje dane, abyśmy mogli przypisać do nich Twoje bilety.</p>
+            <input type="text" id="klient-imie" placeholder="Imię i nazwisko" required>
+            <input type="email" id="klient-email" placeholder="Adres e-mail" required>
+            <!-- Nowe pole na telefon -->
+            <input type="tel" id="klient-telefon" placeholder="Numer telefonu" required>
+            <button class="kup" onclick="potwierdzRezerwacje()">Potwierdzam i rezerwuję</button>
+        </div>
+    </div>
+
     <script src="script.js"></script>
+
 </body>
 </html>

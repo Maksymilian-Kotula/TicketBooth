@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PANEL ADMINA - TicketBooth</title>
+    <link rel="stylesheet" href="style.css?v=3">
+</head>
+<body>
+    <h1>Panel Administratora</h1>
+    <p>Zaznacz miejsca do <b>zablokowania</b> (na pomarańczowo) lub <b>zwolnienia</b> (na niebiesko).</p>
+    
+    <div class="map-wrapper">
+        <div class="map-container">
+            <div class="stage">SCENA (TRYB ADMINA)</div>
+            <div id="seat-map"></div>
+        </div>
+    </div>
+
+    <div id="koszyk-panel">
+        <h2>Oczekujące zmiany</h2>
+        <div id="admin-lista" style="font-weight: bold; margin-bottom: 20px; line-height: 1.6;">
+            Brak zaznaczonych miejsc.
+        </div>
+        <button id="btn-wykonaj" class="kup" disabled onclick="wykonajZmiany()">Zatwierdź zmiany</button>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
