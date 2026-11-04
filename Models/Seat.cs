@@ -23,4 +23,5 @@ public class ReservationRequest
     public string ClientPhone { get; set; } = "";
     // Odbieramy numer zamówienia z koszyka
     public string OrderNumber { get; set; } = ""; 
+    public int TicketCount { get; set; }
 }

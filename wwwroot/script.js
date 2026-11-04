@@ -131,7 +131,8 @@ async function potwierdzRezerwacje() {
         ClientName: imie,
         ClientEmail: email,
         ClientPhone: telefon,
-        OrderNumber: numerZamowienia
+        OrderNumber: numerZamowienia,
+        TicketCount: koszyk.length
     };
     
 
@@ -144,9 +145,19 @@ async function potwierdzRezerwacje() {
     );
     
     await Promise.all(zapytania);
+    //  Wywołanie endpointu do wysyłki e-maila
+    try {
+        await fetch('/api/TicketBooth/order/finalize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(daneKlienta)
+        });
+    } catch (e) {
+        console.error("Nie udało się wysłać e-maila", e);
+    }
     
     zamknijModal();
-    alert(`Dziękujemy, ${imie}! Twoje bilety zostały zarezerwowane. Szczegóły prześlemy na adres: ${email}`);
+    alert(`Dziękujemy, ${imie}! Twoje bilety zostały zarezerwowane. Instrukcje do przelewu dla zamówienia ${numerZamowienia} wysłaliśmy na adres: ${email}`);
     
     koszyk = [];
     if (elImie) elImie.value = '';

@@ -4,16 +4,50 @@ let doZwolnienia = [];
 let wszystkieKrzesla = [];
 
 // NOWE: Funkcja logowania
-function zaloguj() {
+async function zaloguj() {
     const wpisaneHaslo = document.getElementById('admin-haslo-input').value;
     if (!wpisaneHaslo) {
         alert("Podaj hasło!");
         return;
     }
-    hasloAdmina = wpisaneHaslo;
-    document.getElementById('ekran-logowania').style.display = 'none';
-    document.getElementById('panel-admina').style.display = 'block';
-    ladujMiejsca(); 
+
+    // Pytamy nasz nowy endpoint w C#, czy hasło pasuje
+    const odpowiedz = await fetch('/api/TicketBooth/verify-admin', {
+        headers: { 'Admin-Haslo': wpisaneHaslo }
+    });
+
+    if (odpowiedz.ok) {
+        hasloAdmina = wpisaneHaslo;
+        document.getElementById('ekran-logowania').style.display = 'none';
+        document.getElementById('panel-admina').style.display = 'block';
+        ladujMiejsca(); 
+    } else {
+        alert("Błędne hasło administratora! Odmowa dostępu.");
+    }
+}
+
+// Funkcje akcji na zamówieniach (zabezpieczone obsługą błędów)
+async function potwierdzZamowienie(nr) {
+    if(confirm(`Potwierdzić wpłatę dla zamówienia ${nr}? Miejsca zostaną zablokowane na stałe.`)) {
+        const odp = await fetch(`/api/TicketBooth/order/${nr}/confirm`, { method: 'PUT', headers: { 'Admin-Haslo': hasloAdmina } });
+        if(odp.ok) {
+            ladujMiejsca();
+        } else {
+            alert("Brak uprawnień. Upewnij się, że jesteś zalogowany poprawnym hasłem.");
+        }
+    }
+}
+
+async function anulujZamowienie(nr) {
+    if(confirm(`Brak wpłaty dla ${nr}? Miejsca wrócą do puli biletów.`)) {
+        const odp = await fetch(`/api/TicketBooth/order/${nr}/cancel`, { method: 'PUT', headers: { 'Admin-Haslo': hasloAdmina } });
+        if(odp.ok) {
+            alert("Zamówienie anulowane. Wszystkie miejsca z tej grupy wróciły do puli.");
+            ladujMiejsca();
+        } else {
+            alert("Brak uprawnień. Upewnij się, że jesteś zalogowany poprawnym hasłem.");
+        }
+    }
 }
 
 async function ladujMiejsca() {
@@ -119,11 +153,13 @@ function budujTabeleRezerwacji() {
 
     const teraz = new Date();
 
+    const cenaZaBilet = 50;
+
     Object.keys(zamowienia).forEach(nr => {
         const z = zamowienia[nr];
         const tr = document.createElement('tr');
         
-        // Obliczanie czasu (czerwony kolor po 1 godzinie, jeśli status to Oczekuje)
+        // Obliczanie czasu
         let czasWyswietlany = "-";
         let stylCzasu = "";
         if (z.czas && z.status === "Oczekuje") {
@@ -149,11 +185,20 @@ function budujTabeleRezerwacji() {
             }
         }
 
+        // NOWE: Obliczanie i wyświetlanie kwoty
+        const liczbaBiletow = z.miejsca.length;
+        const kwotaDoZaplaty = liczbaBiletow * cenaZaBilet;
+        
+        // Jeśli to rezerwacja ręczna (bez orderNumber), nie pokazuj kwoty
+        const tekstKwoty = nr !== 'Brak (Ręczna)' 
+            ? `<br><span style="color: #d32f2f; font-weight: bold; font-size: 1.1em;">${kwotaDoZaplaty} zł</span>` 
+            : "";
+
         tr.innerHTML = `
             <td><b>${nr}</b><br><small style="${stylCzasu}">${czasWyswietlany}</small></td>
             <td>${z.klient || 'Admin'}<br><small>${z.email}</small><br><small>${z.telefon}</small></td>
             <td>${z.miejsca.join(', ')}</td>
-            <td><b>${z.status}</b></td>
+            <td><b>${z.status}</b> ${tekstKwoty}</td>
             <td>${przyciski}</td>
         `;
         tbody.appendChild(tr);
