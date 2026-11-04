@@ -1,18 +1,42 @@
+/* Definicja kolorów Orkiestry Sygnał */
+:root {
+    --sygnal-dark: #1D1D1B;
+    --sygnal-gold: #CA9E67;
+    --sygnal-green: #13403A;
+}
+
 body { 
     font-family: Arial, sans-serif; 
     text-align: center; 
-    background: #f4f4f9; 
-    padding-bottom: 50px;
+    background-color: #d4cfbf; 
+    color: var(--sygnal-dark);
+    margin: 0;
+    padding: 20px 10px 50px 10px;
 }
 
-/* Wygląd sceny */
+h1, h2 {
+    color: var(--sygnal-green);
+}
+
+/* --- RESPONSYWNY KONTENER SALI --- */
+.map-wrapper {
+    width: 100%;
+    overflow-x: auto; /* Pozwala na przewijanie palcem na telefonach */
+    padding: 10px 0 30px 0;
+}
+
+.map-container {
+    min-width: 1250px; /* Wymusza szerokość sali, żeby krzesła się nie ściskały */
+    margin: 0 auto;
+}
+/* --------------------------------- */
+
 .stage {
     width: 800px;
-    max-width: 90%;
     height: 60px;
-    background-color: #333;
-    color: white;
-    margin: 20px auto 40px auto; /* 40px odstępu od krzeseł na dole */
+    background-color: var(--sygnal-dark);
+    color: var(--sygnal-gold);
+    margin: 0 auto 40px auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -20,21 +44,17 @@ body {
     font-weight: bold;
     border-radius: 8px 8px 0 0;
     letter-spacing: 5px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 10px rgba(29, 29, 27, 0.3);
 }
 
-/* Kontener siatki z korytarzami */
 #seat-map {
     display: grid;
-    /* 15 krzeseł (35px), korytarz (50px), 15 krzeseł (35px) */
     grid-template-columns: repeat(15, 35px) 50px repeat(15, 35px); 
-    /* 6 rzędów (35px), korytarz (50px), 11 rzędów (35px) */
     grid-template-rows: repeat(6, 35px) 50px repeat(11, 35px);
     gap: 6px;
     justify-content: center;
 }
 
-/* Wygląd pojedynczego krzesła */
 .seat {
     width: 35px;
     height: 35px;
@@ -46,12 +66,69 @@ body {
     font-weight: bold;
     color: white;
     cursor: pointer;
-    transition: transform 0.1s;
+    transition: all 0.2s ease;
 }
 
-.seat:hover {
-    transform: scale(1.1);
+.seat:hover { 
+    transform: scale(1.1); 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
 }
 
-.wolne { background-color: #4CAF50; }
-.zajete { background-color: #F44336; }
+/* Kolory stanów z użyciem barw Orkiestry */
+.wolne { 
+    background-color: var(--sygnal-green); 
+} 
+.wybrane { 
+    background-color: var(--sygnal-gold); 
+    color: var(--sygnal-dark); /* Ciemny tekst na złotym by był czytelny */
+    box-shadow: 0 0 8px var(--sygnal-gold);
+} 
+.zajete { 
+    background-color: #e0e0e0; 
+    color: #999;
+    cursor: not-allowed; 
+}
+.zajete:hover { transform: none; box-shadow: none; }
+
+/* Koszyk i przycisk */
+#koszyk-panel {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(29, 29, 27, 0.1);
+    max-width: 600px;
+    margin: 0 auto;
+    border-top: 4px solid var(--sygnal-gold); /* Złoty akcent na górze koszyka */
+}
+
+#koszyk-lista { font-weight: bold; margin-bottom: 20px; min-height: 20px; line-height: 1.5; }
+
+button.kup { 
+    background-color: var(--sygnal-gold); 
+    color: var(--sygnal-dark); 
+    border: none; 
+    padding: 12px 24px; 
+    font-size: 16px; 
+    cursor: pointer; 
+    border-radius: 4px; 
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: background-color 0.2s;
+}
+
+button.kup:hover:not(:disabled) {
+    background-color: #b58a54; /* Nieco ciemniejszy złoty po najechaniu */
+}
+
+button.kup:disabled { 
+    background-color: #ccc; 
+    color: #888;
+    cursor: not-allowed; 
+}
+
+/* Poprawki na mniejsze ekrany (telefony) */
+@media (max-width: 768px) {
+    h1 { font-size: 22px; }
+    p { font-size: 14px; }
+    #koszyk-panel { margin: 10px; padding: 15px; }
+}
