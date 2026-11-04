@@ -68,7 +68,6 @@ app.MapGet("/api/TicketBooth/seats", async (AppDbContext db) =>
 
 app.MapPut("/api/TicketBooth/reserve/{id}", async (int id, ReservationRequest? request, HttpContext http, AppDbContext db) =>
 {
-    // Jeśli ktoś rezerwuje bez podania imienia (czyli robi to Admin z panelu), wymagamy hasła!
     if (request == null || string.IsNullOrWhiteSpace(request.ClientName))
     {
         var podaneHaslo = http.Request.Headers["Admin-Haslo"].ToString();
@@ -76,20 +75,52 @@ app.MapPut("/api/TicketBooth/reserve/{id}", async (int id, ReservationRequest? r
     }
 
     var seat = await db.Seats.FindAsync(id);
-    if (seat == null) return Results.NotFound("Nie znaleziono takiego miejsca");
-    if (seat.Status == "Zajęty") return Results.BadRequest("To miejsce jest już zarezerwowane!");
+    if (seat == null) return Results.NotFound();
+    if (seat.Status != "Wolne") return Results.BadRequest();
 
-    seat.Status = "Zajęty";
+    // Nowy status i zapisanie czasu
+    seat.Status = "Oczekuje";
     
     if (request != null)
     {
         seat.ClientName = request.ClientName;
         seat.ClientEmail = request.ClientEmail;
         seat.ClientPhone = request.ClientPhone;
+        seat.OrderNumber = request.OrderNumber;
+        seat.ReservationTime = DateTime.Now; // Zapisujemy dokładną godzinę kliknięcia
     }
 
     await db.SaveChangesAsync();
-    return Results.Ok($"Miejsce w rzędzie {seat.Row} o numerze {seat.Number} zostało zarezerwowane!");
+    return Results.Ok();
+});
+
+// Akceptacja całego zamówienia przez Admina
+app.MapPut("/api/TicketBooth/order/{orderNumber}/confirm", async (string orderNumber, HttpContext http, AppDbContext db) =>
+{
+    if (http.Request.Headers["Admin-Haslo"].ToString() != "Sygnal2026!") return Results.Unauthorized();
+
+    var seats = await db.Seats.Where(s => s.OrderNumber == orderNumber).ToListAsync();
+    foreach (var seat in seats) { seat.Status = "Opłacone"; }
+    
+    await db.SaveChangesAsync();
+    return Results.Ok();
+});
+
+//  Usunięcie całego zamówienia (np. brak wpłaty)
+app.MapPut("/api/TicketBooth/order/{orderNumber}/cancel", async (string orderNumber, HttpContext http, AppDbContext db) =>
+{
+    if (http.Request.Headers["Admin-Haslo"].ToString() != "Sygnal2026!") return Results.Unauthorized();
+
+    var seats = await db.Seats.Where(s => s.OrderNumber == orderNumber).ToListAsync();
+    foreach (var seat in seats) 
+    { 
+        seat.Status = "Wolne";
+        seat.ClientName = null; seat.ClientEmail = null; seat.ClientPhone = null;
+        seat.OrderNumber = null; seat.ReservationTime = null;
+    }
+    
+    await db.SaveChangesAsync();
+    return Results.Ok();
 });
 
 app.MapPut("/api/TicketBooth/cancel/{id}", async (int id, HttpContext http, AppDbContext db) =>

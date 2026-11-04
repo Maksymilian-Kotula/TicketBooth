@@ -102,26 +102,80 @@ function odswiezPanel() {
 function budujTabeleRezerwacji() {
     const tbody = document.getElementById('tabela-rezerwacji-body');
     tbody.innerHTML = '';
-    const zajete = wszystkieKrzesla.filter(k => k.status !== "Wolne");
+    const zajete = wszystkieKrzesla.filter(k => k.status === "Oczekuje" || k.status === "Opłacone");
     
     if (zajete.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Brak rezerwacji w systemie</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Brak rezerwacji w systemie</td></tr>';
         return;
     }
 
+    // Grupowanie krzeseł po OrderNumber (żeby nie pisać 5 razy tego samego klienta)
+    const zamowienia = {};
     zajete.forEach(k => {
+        const nr = k.orderNumber || 'Brak (Ręczna)';
+        if (!zamowienia[nr]) zamowienia[nr] = { klient: k.clientName, telefon: k.clientPhone, email: k.clientEmail, czas: k.reservationTime, status: k.status, miejsca: [] };
+        zamowienia[nr].miejsca.push(`R${k.row}M${k.number}`);
+    });
+
+    const teraz = new Date();
+
+    Object.keys(zamowienia).forEach(nr => {
+        const z = zamowienia[nr];
         const tr = document.createElement('tr');
+        
+        // Obliczanie czasu (czerwony kolor po 1 godzinie, jeśli status to Oczekuje)
+        let czasWyswietlany = "-";
+        let stylCzasu = "";
+        if (z.czas && z.status === "Oczekuje") {
+            const dataRezerwacji = new Date(z.czas);
+            const roznicaMinut = Math.floor((teraz - dataRezerwacji) / (1000 * 60));
+            czasWyswietlany = `${roznicaMinut} min temu`;
+            if (roznicaMinut > 60) {
+                stylCzasu = "color: red; font-weight: bold;";
+                czasWyswietlany += " (CZAS MINĄŁ)";
+            }
+        }
+
+        // Przyciski akcji
+        let przyciski = "";
+        if (nr !== 'Brak (Ręczna)') {
+            if (z.status === "Oczekuje") {
+                przyciski = `
+                    <button onclick="potwierdzZamowienie('${nr}')" style="background:#4CAF50; color:white; padding:5px; border:none; cursor:pointer;">✅ Opłacone</button>
+                    <button onclick="anulujZamowienie('${nr}')" style="background:#f44336; color:white; padding:5px; border:none; cursor:pointer;">❌ Zwolnij</button>
+                `;
+            } else if (z.status === "Opłacone") {
+                przyciski = `<span style="color: green; font-weight: bold;">ZAKSIĘGOWANO</span>`;
+            }
+        }
+
         tr.innerHTML = `
-            <td><b>Rząd ${k.row}, Miejsce ${k.number}</b></td>
-            <td>${k.clientName || '<span style="color: #999;">Rezerwacja ręczna</span>'}</td>
-            <td>${k.clientEmail || '-'}</td>
-            <td>${k.clientPhone || '-'}</td>
+            <td><b>${nr}</b><br><small style="${stylCzasu}">${czasWyswietlany}</small></td>
+            <td>${z.klient || 'Admin'}<br><small>${z.email}</small><br><small>${z.telefon}</small></td>
+            <td>${z.miejsca.join(', ')}</td>
+            <td><b>${z.status}</b></td>
+            <td>${przyciski}</td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-// NOWE: Przesyłanie hasła w nagłówkach
+// Nowe akcje z użyciem hasła
+async function potwierdzZamowienie(nr) {
+    if(confirm(`Potwierdzić wpłatę dla zamówienia ${nr}? Miejsca zostaną zablokowane na stałe.`)) {
+        await fetch(`/api/TicketBooth/order/${nr}/confirm`, { method: 'PUT', headers: { 'Admin-Haslo': hasloAdmina } });
+        ladujMiejsca();
+    }
+}
+
+async function anulujZamowienie(nr) {
+    if(confirm(`Brak wpłaty dla ${nr}? Miejsca wrócą do puli biletów.`)) {
+        await fetch(`/api/TicketBooth/order/${nr}/cancel`, { method: 'PUT', headers: { 'Admin-Haslo': hasloAdmina } });
+        ladujMiejsca();
+    }
+}
+
+// Przesyłanie hasła w nagłówkach
 async function wykonajZmiany() {
     if (!confirm(`Czy na pewno chcesz zatwierdzić te zmiany?\n\nBlokowane: ${doZablokowania.length}\nZwalniane: ${doZwolnienia.length}`)) {
         return;

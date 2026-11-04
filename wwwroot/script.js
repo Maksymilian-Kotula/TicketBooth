@@ -124,11 +124,16 @@ async function potwierdzRezerwacje() {
         btnPotwierdz.textContent = "Przetwarzanie...";
     }
 
+    // Generujemy losowy numer zamówienia, np. SYGNAL-48291
+    const numerZamowienia = "SYGNAL-" + Math.floor(10000 + Math.random() * 90000);
+
     const daneKlienta = {
         ClientName: imie,
         ClientEmail: email,
-        ClientPhone: telefon
+        ClientPhone: telefon,
+        OrderNumber: numerZamowienia
     };
+    
 
     const zapytania = koszyk.map(id => 
         fetch(`/api/TicketBooth/reserve/${id}`, { 
