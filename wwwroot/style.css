@@ -21,7 +21,7 @@ h1, h2 {
 /* --- RESPONSYWNY KONTENER SALI --- */
 .map-wrapper {
     width: 100%;
-    overflow-x: auto; /* Pozwala na przewijanie palcem na telefonach */
+    overflow-x: auto; 
     padding: 10px 0 30px 0;
 }
 
@@ -216,4 +216,37 @@ button.kup:disabled {
 
 .admin-tabela tr:hover {
     background-color: #e8e8e8;
+}
+
+/* --- IDEALNE SKALOWANIE CAŁEJ SALI NA TELEFONIE (WYŚRODKOWANE) --- */
+@media (max-width: 768px) {
+    body {
+        padding: 5px;
+        overflow-x: hidden;
+    }
+
+    .map-wrapper {
+        width: 100%;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Zmusza zawartość do bycia dokładnie na środku */
+        padding: 0;
+        margin: 0;
+    }
+
+    .map-container {
+        width: 1250px; 
+        /* Centrujemy absolutnie i odsuwamy o połowę szerokości, żeby była na środku ekranu */
+        margin-left: 50%;
+        transform: translateX(-50%) scale(0.30);
+        transform-origin: top center;
+        margin-bottom: -480px; 
+    }
+
+    #koszyk-panel {
+        max-width: 95%;
+        margin: 20px auto 0 auto;
+        padding: 15px;
+    }
 }
