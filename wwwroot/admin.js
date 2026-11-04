@@ -1,6 +1,20 @@
+let hasloAdmina = "";
 let doZablokowania = [];
 let doZwolnienia = [];
 let wszystkieKrzesla = [];
+
+// NOWE: Funkcja logowania
+function zaloguj() {
+    const wpisaneHaslo = document.getElementById('admin-haslo-input').value;
+    if (!wpisaneHaslo) {
+        alert("Podaj hasło!");
+        return;
+    }
+    hasloAdmina = wpisaneHaslo;
+    document.getElementById('ekran-logowania').style.display = 'none';
+    document.getElementById('panel-admina').style.display = 'block';
+    ladujMiejsca(); 
+}
 
 async function ladujMiejsca() {
     const odpowiedz = await fetch('/api/TicketBooth/seats');
@@ -22,22 +36,25 @@ function odswiezWidok() {
         kwadracik.style.gridColumn = kolumnaSiatki;
         kwadracik.style.gridRow = rzadSiatki;
 
-        // Logika wyświetlania w trybie Admina
+        const nazwaKlienta = krzeslo.clientName || 'Brak danych';
+        const telefonKlienta = krzeslo.clientPhone || '-';
+
         if (krzeslo.status !== "Wolne") {
+            const chmurka = `Rząd: ${krzeslo.row}, M: ${krzeslo.number}\nKlient: ${nazwaKlienta}\nTel: ${telefonKlienta}`;
             if (doZwolnienia.includes(krzeslo.id)) {
                 kwadracik.classList.add('admin-do-zwolnienia');
-                kwadracik.title = "Oznaczone do ZWOLNIENIA";
+                kwadracik.title = `Oznaczone do ZWOLNIENIA\n${chmurka}`;
             } else {
                 kwadracik.classList.add('admin-zajete');
-                kwadracik.title = "Zajęte - kliknij, by zwolnić";
+                kwadracik.title = `Zajęte - kliknij, by zwolnić\n${chmurka}`;
             }
         } else {
             if (doZablokowania.includes(krzeslo.id)) {
                 kwadracik.classList.add('admin-do-zablokowania');
-                kwadracik.title = "Oznaczone do ZABLOKOWANIA";
+                kwadracik.title = `Oznaczone do ZABLOKOWANIA\nRząd: ${krzeslo.row}, M: ${krzeslo.number}`;
             } else {
                 kwadracik.classList.add('wolne');
-                kwadracik.title = "Wolne - kliknij, by zablokować";
+                kwadracik.title = `Wolne - kliknij, by zablokować\nRząd: ${krzeslo.row}, M: ${krzeslo.number}`;
             }
         }
         
@@ -46,23 +63,16 @@ function odswiezWidok() {
     });
     
     odswiezPanel();
+    budujTabeleRezerwacji();
 }
 
 function przelaczMiejsce(krzeslo) {
     if (krzeslo.status !== "Wolne") {
-        // Jeśli zajęte, dodajemy/usuwamy z listy do zwolnienia
-        if (doZwolnienia.includes(krzeslo.id)) {
-            doZwolnienia = doZwolnienia.filter(id => id !== krzeslo.id);
-        } else {
-            doZwolnienia.push(krzeslo.id);
-        }
+        if (doZwolnienia.includes(krzeslo.id)) { doZwolnienia = doZwolnienia.filter(id => id !== krzeslo.id); } 
+        else { doZwolnienia.push(krzeslo.id); }
     } else {
-        // Jeśli wolne, dodajemy/usuwamy z listy do zablokowania
-        if (doZablokowania.includes(krzeslo.id)) {
-            doZablokowania = doZablokowania.filter(id => id !== krzeslo.id);
-        } else {
-            doZablokowania.push(krzeslo.id);
-        }
+        if (doZablokowania.includes(krzeslo.id)) { doZablokowania = doZablokowania.filter(id => id !== krzeslo.id); } 
+        else { doZablokowania.push(krzeslo.id); }
     }
     odswiezWidok();
 }
@@ -76,52 +86,74 @@ function odswiezPanel() {
         btnWykonaj.disabled = true;
     } else {
         let tekst = "";
-        
         if (doZablokowania.length > 0) {
-            tekst += `<span style="color: #FF9800;">Do zablokowania (${doZablokowania.length}):</span> `;
-            tekst += doZablokowania.map(id => {
-                const k = wszystkieKrzesla.find(x => x.id === id);
-                return `R${k.row}M${k.number}`;
-            }).join(', ') + "<br><br>";
+            tekst += `<span style="color: #FF9800;">Do zablokowania (${doZablokowania.length}):</span> ` + 
+                     doZablokowania.map(id => { const k = wszystkieKrzesla.find(x => x.id === id); return `R${k.row}M${k.number}`; }).join(', ') + "<br><br>";
         }
-
         if (doZwolnienia.length > 0) {
-            tekst += `<span style="color: #2196F3;">Do zwolnienia (${doZwolnienia.length}):</span> `;
-            tekst += doZwolnienia.map(id => {
-                const k = wszystkieKrzesla.find(x => x.id === id);
-                return `R${k.row}M${k.number}`;
-            }).join(', ');
+            tekst += `<span style="color: #2196F3;">Do zwolnienia (${doZwolnienia.length}):</span> ` + 
+                     doZwolnienia.map(id => { const k = wszystkieKrzesla.find(x => x.id === id); return `R${k.row}M${k.number}`; }).join(', ');
         }
-
         listaDiv.innerHTML = tekst;
         btnWykonaj.disabled = false;
     }
 }
 
+function budujTabeleRezerwacji() {
+    const tbody = document.getElementById('tabela-rezerwacji-body');
+    tbody.innerHTML = '';
+    const zajete = wszystkieKrzesla.filter(k => k.status !== "Wolne");
+    
+    if (zajete.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Brak rezerwacji w systemie</td></tr>';
+        return;
+    }
+
+    zajete.forEach(k => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><b>Rząd ${k.row}, Miejsce ${k.number}</b></td>
+            <td>${k.clientName || '<span style="color: #999;">Rezerwacja ręczna</span>'}</td>
+            <td>${k.clientEmail || '-'}</td>
+            <td>${k.clientPhone || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// NOWE: Przesyłanie hasła w nagłówkach
 async function wykonajZmiany() {
     if (!confirm(`Czy na pewno chcesz zatwierdzić te zmiany?\n\nBlokowane: ${doZablokowania.length}\nZwalniane: ${doZwolnienia.length}`)) {
         return;
     }
-
     const btnWykonaj = document.getElementById('btn-wykonaj');
     btnWykonaj.disabled = true;
     btnWykonaj.textContent = "Przetwarzanie...";
 
-    // Generujemy wszystkie zapytania jednocześnie (blokowanie i zwalnianie)
-    const zapytaniaBlokady = doZablokowania.map(id => fetch(`/api/TicketBooth/reserve/${id}`, { method: 'PUT' }));
-    const zapytaniaZwolnienia = doZwolnienia.map(id => fetch(`/api/TicketBooth/cancel/${id}`, { method: 'PUT' }));
+    // Dodajemy nagłówek 'Admin-Haslo' do zapytań!
+    const opcjeZapytania = { 
+        method: 'PUT', 
+        headers: { 'Admin-Haslo': hasloAdmina } 
+    };
+
+    const zapytaniaBlokady = doZablokowania.map(id => fetch(`/api/TicketBooth/reserve/${id}`, opcjeZapytania));
+    const zapytaniaZwolnienia = doZwolnienia.map(id => fetch(`/api/TicketBooth/cancel/${id}`, opcjeZapytania));
     
-    // Czekamy na wykonanie wszystkich
-    await Promise.all([...zapytaniaBlokady, ...zapytaniaZwolnienia]);
+    // Czekamy na odpowiedzi
+    const odpowiedzi = await Promise.all([...zapytaniaBlokady, ...zapytaniaZwolnienia]);
     
-    alert("Zmiany zostały pomyślnie wprowadzone do bazy!");
+    // Sprawdzamy czy któreś zapytanie zwróciło błąd 401 (Unauthorized)
+    const bladAutoryzacji = odpowiedzi.some(odp => odp.status === 401);
     
-    // Czyszczenie list po sukcesie
+    if (bladAutoryzacji) {
+        alert("Błąd: Podałeś błędne hasło administratora! Odśwież stronę i spróbuj ponownie.");
+    } else {
+        alert("Zmiany zostały pomyślnie wprowadzone do bazy!");
+    }
+    
     doZablokowania = [];
     doZwolnienia = [];
     btnWykonaj.textContent = "Zatwierdź zmiany";
     
     ladujMiejsca(); 
 }
-
-ladujMiejsca();

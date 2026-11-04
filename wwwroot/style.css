@@ -180,3 +180,40 @@ button.kup:disabled {
     font-size: 16px;
     box-sizing: border-box;
 }
+
+/* --- TABELA REZERWACJI (ADMIN) --- */
+.admin-tabela-sekcja {
+    margin: 40px auto;
+    max-width: 900px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(29, 29, 27, 0.1);
+    border-top: 4px solid var(--sygnal-green);
+    overflow-x: auto; /* Przewijanie na telefonie */
+}
+
+.admin-tabela {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.admin-tabela th, .admin-tabela td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+.admin-tabela th {
+    background-color: var(--sygnal-green);
+    color: white;
+}
+
+.admin-tabela tr:nth-child(even) { 
+    background-color: #f4f4f9; 
+}
+
+.admin-tabela tr:hover {
+    background-color: #e8e8e8;
+}

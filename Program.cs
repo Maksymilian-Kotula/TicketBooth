@@ -66,21 +66,21 @@ app.MapGet("/api/TicketBooth/seats", async (AppDbContext db) =>
     return Results.Ok(seats);
 });
 
-app.MapPut("/api/TicketBooth/reserve/{id}", async (int id, ReservationRequest? request, AppDbContext db) =>
+app.MapPut("/api/TicketBooth/reserve/{id}", async (int id, ReservationRequest? request, HttpContext http, AppDbContext db) =>
 {
-    var seat = await db.Seats.FindAsync(id);
-
-    if (seat == null)
+    // Jeśli ktoś rezerwuje bez podania imienia (czyli robi to Admin z panelu), wymagamy hasła!
+    if (request == null || string.IsNullOrWhiteSpace(request.ClientName))
     {
-        return Results.NotFound("Nie znaleziono takiego miejsca");
+        var podaneHaslo = http.Request.Headers["Admin-Haslo"].ToString();
+        if (podaneHaslo != "Sygnal2026!") return Results.Unauthorized();
     }
-    if (seat.Status == "Zajęty"){
-        return Results.BadRequest("To miejsce jest już zarezerwowane!");
-    }
+
+    var seat = await db.Seats.FindAsync(id);
+    if (seat == null) return Results.NotFound("Nie znaleziono takiego miejsca");
+    if (seat.Status == "Zajęty") return Results.BadRequest("To miejsce jest już zarezerwowane!");
 
     seat.Status = "Zajęty";
     
-    // Jeśli przysłano dane klienta, to je zapisujemy (Admin tego nie wysyła, więc dla admina request będzie null)
     if (request != null)
     {
         seat.ClientName = request.ClientName;
@@ -92,21 +92,17 @@ app.MapPut("/api/TicketBooth/reserve/{id}", async (int id, ReservationRequest? r
     return Results.Ok($"Miejsce w rzędzie {seat.Row} o numerze {seat.Number} zostało zarezerwowane!");
 });
 
-app.MapPut("/api/TicketBooth/cancel/{id}", async (int id, AppDbContext db) =>
+app.MapPut("/api/TicketBooth/cancel/{id}", async (int id, HttpContext http, AppDbContext db) =>
 {
-    var seat = await db.Seats.FindAsync(id);
+    // Zwalniać miejsca może TYLKO Admin, więc zawsze wymagamy hasła
+    var podaneHaslo = http.Request.Headers["Admin-Haslo"].ToString();
+    if (podaneHaslo != "Sygnal2026!") return Results.Unauthorized();
 
-    if (seat == null)
-    {
-        return Results.NotFound("Nie znaleziono takiego miejsca");
-    }
-    if (seat.Status == "Wolne"){
-        return Results.BadRequest("To miejsce jest nie jest jeszcze zarezerowane!");
-    }
+    var seat = await db.Seats.FindAsync(id);
+    if (seat == null) return Results.NotFound("Nie znaleziono takiego miejsca");
+    if (seat.Status == "Wolne") return Results.BadRequest("To miejsce nie jest jeszcze zarezerwowane!");
 
     seat.Status = "Wolne";
-    
-    // Czyścimy dane klienta przy zwalnianiu miejsca
     seat.ClientName = null;
     seat.ClientEmail = null;
     seat.ClientPhone = null;

@@ -4,25 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PANEL ADMINA - TicketBooth</title>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
-    <h1>Panel Administratora</h1>
-    <p>Zaznacz miejsca do <b>zablokowania</b> (na pomarańczowo) lub <b>zwolnienia</b> (na niebiesko).</p>
     
-    <div class="map-wrapper">
-        <div class="map-container">
-            <div class="stage">SCENA (TRYB ADMINA)</div>
-            <div id="seat-map"></div>
-        </div>
+    <!-- NOWE: Ekran logowania -->
+    <div id="ekran-logowania" style="text-align: center; margin-top: 100px;">
+        <h1 style="color: var(--sygnal-green);">Panel Administratora</h1>
+        <p>Podaj hasło dostępu, aby zarządzać salą.</p>
+        <input type="password" id="admin-haslo-input" placeholder="Hasło..." style="padding: 12px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc;">
+        <br><br>
+        <button class="kup" onclick="zaloguj()">Wejdź do panelu</button>
     </div>
 
-    <div id="koszyk-panel">
-        <h2>Oczekujące zmiany</h2>
-        <div id="admin-lista" style="font-weight: bold; margin-bottom: 20px; line-height: 1.6;">
-            Brak zaznaczonych miejsc.
+    <!-- Ukryty panel główny -->
+    <div id="panel-admina" style="display: none;">
+        <h1>Zarządzanie Salą</h1>
+        <p>Zaznacz miejsca do <b>zablokowania</b> (na pomarańczowo) lub <b>zwolnienia</b> (na niebiesko).</p>
+        
+        <div class="map-wrapper">
+            <div class="map-container">
+                <div class="stage">SCENA (TRYB ADMINA)</div>
+                <div id="seat-map"></div>
+            </div>
         </div>
-        <button id="btn-wykonaj" class="kup" disabled onclick="wykonajZmiany()">Zatwierdź zmiany</button>
+
+        <div id="koszyk-panel">
+            <h2>Oczekujące zmiany</h2>
+            <div id="admin-lista" style="font-weight: bold; margin-bottom: 20px; line-height: 1.6;">
+                Brak zaznaczonych miejsc.
+            </div>
+            <button id="btn-wykonaj" class="kup" disabled onclick="wykonajZmiany()">Zatwierdź zmiany</button>
+        </div>
+
+        <div class="admin-tabela-sekcja">
+            <h2>Lista rezerwacji i dane klientów</h2>
+            <table class="admin-tabela">
+                <thead>
+                    <tr><th>Miejsce</th><th>Imię i Nazwisko</th><th>E-mail</th><th>Telefon</th></tr>
+                </thead>
+                <tbody id="tabela-rezerwacji-body"></tbody>
+            </table>
+        </div>
     </div>
 
     <script src="admin.js"></script>

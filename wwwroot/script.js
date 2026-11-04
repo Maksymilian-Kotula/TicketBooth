@@ -1,15 +1,21 @@
-let koszyk = []; // Tutaj trzymamy ID miejsc, które kliknął użytkownik
-let wszystkieKrzesla = []; // Tutaj trzymamy dane z bazy, by móc wypisać numer rzędu w koszyku
+let koszyk = []; 
+let wszystkieKrzesla = []; 
 
+// 1. Pobieranie danych z serwera
 async function ladujMiejsca() {
-    const odpowiedz = await fetch('/api/TicketBooth/seats');
-    wszystkieKrzesla = await odpowiedz.json();
-    odswiezWidok();
+    try {
+        const odpowiedz = await fetch('/api/TicketBooth/seats');
+        wszystkieKrzesla = await odpowiedz.json();
+        odswiezWidok();
+    } catch (błąd) {
+        console.error("Błąd połączenia z bazą:", błąd);
+    }
 }
 
-// Funkcja rysująca salę na podstawie pobranych danych i zawartości koszyka
+// 2. Rysowanie sali
 function odswiezWidok() {
     const mapa = document.getElementById('seat-map');
+    if (!mapa) return; 
     mapa.innerHTML = ''; 
 
     wszystkieKrzesla.forEach(krzeslo => {
@@ -23,12 +29,9 @@ function odswiezWidok() {
         kwadracik.style.gridColumn = kolumnaSiatki;
         kwadracik.style.gridRow = rzadSiatki;
 
-        // Logika kolorów i klikania dla klienta
         if (krzeslo.status !== "Wolne") {
             kwadracik.classList.add('zajete');
-            // Miejsca zajętego nie da się kliknąć
         } else {
-            // Jeśli jest wolne w bazie, sprawdzamy, czy klient ma je w koszyku
             if (koszyk.includes(krzeslo.id)) {
                 kwadracik.classList.add('wybrane');
             } else {
@@ -40,76 +43,97 @@ function odswiezWidok() {
         mapa.appendChild(kwadracik);
     });
     
-    odswiezKoszyk(); // Po narysowaniu sali, aktualizujemy tekst w koszyku
+    odswiezKoszyk(); 
 }
 
-// Dodawanie/usuwanie z koszyka
+// 3. Logika koszyka
 function przelaczMiejsce(id) {
     if (koszyk.includes(id)) {
-        koszyk = koszyk.filter(k => k !== id); // Wyrzuć z koszyka
+        koszyk = koszyk.filter(k => k !== id); 
     } else {
-        koszyk.push(id); // Dodaj do koszyka
+        koszyk.push(id); 
     }
-    odswiezWidok(); // Przebuduj salę, by zaktualizować kolory
+    odswiezWidok(); 
 }
 
-// Wypisywanie informacji na dole strony
 function odswiezKoszyk() {
     const listaDiv = document.getElementById('koszyk-lista');
     const btnKup = document.getElementById('btn-kup');
+    if (!listaDiv || !btnKup) return;
 
     if (koszyk.length === 0) {
         listaDiv.innerHTML = "Brak wybranych miejsc.";
         btnKup.disabled = true;
     } else {
-        // Zbieramy dane o wybranych krzesłach z pełnej listy
         const wybraneDetale = koszyk.map(id => wszystkieKrzesla.find(k => k.id === id));
-        
         let tekst = wybraneDetale.map(k => `Rząd ${k.row}, Miejsce ${k.number}`).join('<br>');
         listaDiv.innerHTML = `Liczba biletów: ${koszyk.length}<br><br>${tekst}`;
         btnKup.disabled = false;
     }
 }
 
-// ---  Otwieranie i zamykanie modala ---
+// 4. Otwieranie i zamykanie okienka z danymi (Modal)
 function kupBilety() {
-    // Zamiast od razu wysyłać, pokazujemy okienko
-    document.getElementById('modal-rezerwacji').style.display = "block";
+    const modal = document.getElementById('modal-rezerwacji');
+    if (modal) modal.style.display = "block";
 }
 
 function zamknijModal() {
-    document.getElementById('modal-rezerwacji').style.display = "none";
+    const modal = document.getElementById('modal-rezerwacji');
+    if (modal) modal.style.display = "none";
 }
 
-// Finalizacja po wypełnieniu formularza
+// 5. Wysyłanie rezerwacji z danymi klienta do bazy
+// 5. Wysyłanie rezerwacji z danymi klienta do bazy i WALIDACJĄ
 async function potwierdzRezerwacje() {
-    const imie = document.getElementById('klient-imie').value;
-    const email = document.getElementById('klient-email').value;
-    const telefon = document.getElementById('klient-telefon').value; // Pobieramy telefon
+    const elImie = document.getElementById('klient-imie');
+    const elEmail = document.getElementById('klient-email');
+    const elTelefon = document.getElementById('klient-telefon');
+    
+    // Pobieramy wartości i usuwamy puste spacje na początku i końcu (.trim())
+    const imie = elImie ? elImie.value.trim() : '';
+    const email = elEmail ? elEmail.value.trim() : '';
+    const telefon = elTelefon ? elTelefon.value.trim() : '';
 
+    // --- ETAP 1: Czy pola nie są puste? ---
     if (!imie || !email || !telefon) {
-        alert("Proszę wypełnić wszystkie pola!");
+        alert("Proszę wypełnić wszystkie pola (Imię, E-mail oraz Telefon)!");
         return;
     }
 
-    const btnPotwierdz = document.querySelector('.modal-content button.kup');
-    btnPotwierdz.disabled = true;
-    btnPotwierdz.textContent = "Przetwarzanie...";
+    // --- ETAP 2: Walidacja E-mail ---
+    // Sprawdza czy jest coś przed @, potem @, potem coś, kropka i znowu coś
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert("Proszę podać poprawny adres e-mail (np. jan@kowalski.pl).");
+        return;
+    }
 
-    // Przygotowujemy paczkę danych dla C#
+    // --- ETAP 3: Walidacja Telefonu ---
+    // Usuwamy wszystko co nie jest cyfrą i sprawdzamy czy zostało min. 9 cyfr
+    const sameCyfry = telefon.replace(/[^0-9]/g, '');
+    if (sameCyfry.length < 9) {
+        alert("Proszę podać poprawny numer telefonu (minimum 9 cyfr).");
+        return;
+    }
+
+    // Jeśli przeszliśmy walidację, blokujemy przycisk i wysyłamy dane
+    const btnPotwierdz = document.querySelector('.modal-content button.kup');
+    if (btnPotwierdz) {
+        btnPotwierdz.disabled = true;
+        btnPotwierdz.textContent = "Przetwarzanie...";
+    }
+
     const daneKlienta = {
         ClientName: imie,
         ClientEmail: email,
         ClientPhone: telefon
     };
 
-    // Wysyłamy zapytanie PUT dla każdego miejsca w koszyku, DODAJĄC dane klienta do "body"
     const zapytania = koszyk.map(id => 
         fetch(`/api/TicketBooth/reserve/${id}`, { 
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(daneKlienta)
         })
     );
@@ -120,12 +144,17 @@ async function potwierdzRezerwacje() {
     alert(`Dziękujemy, ${imie}! Twoje bilety zostały zarezerwowane. Szczegóły prześlemy na adres: ${email}`);
     
     koszyk = [];
-    document.getElementById('klient-imie').value = '';
-    document.getElementById('klient-email').value = '';
-    document.getElementById('klient-telefon').value = '';
-    btnPotwierdz.disabled = false;
-    btnPotwierdz.textContent = "Potwierdzam i rezerwuję";
+    if (elImie) elImie.value = '';
+    if (elEmail) elEmail.value = '';
+    if (elTelefon) elTelefon.value = '';
+    
+    if (btnPotwierdz) {
+        btnPotwierdz.disabled = false;
+        btnPotwierdz.textContent = "Potwierdzam i rezerwuję";
+    }
     
     ladujMiejsca(); 
 }
 
+// Start
+ladujMiejsca();
